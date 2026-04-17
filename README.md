@@ -31,4 +31,4 @@
 - **Email Provider**: [Brevo](https://www.brevo.com/) (SMTP Relay)
 - **Hosting**: [Vercel](https://vercel.com/)
 
-[![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/iltuonome)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/raffap)
