@@ -14,6 +14,7 @@ import Classifica from "./Classifica";
 import ResetPassword from "./ResetPassword";
 import ProtectedRoute from "./ProtectedRoute";
 import Welcome from "./Welcome";
+import { Analytics } from "@vercel/analytics/next";
 
 export default function App() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
         </Route>
       </Routes>
+      <Analytics />
     </BrowserRouter>
   );
 }
