@@ -1,24 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from './supabase';
-import { ArrowLeft, Save, Target, Activity, Star, Share2, Copy, Hash, LogOut, UserMinus, Lock, Eye, EyeOff, KeyRound } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "./supabase";
+import {
+  ArrowLeft,
+  Save,
+  Target,
+  Activity,
+  Star,
+  Share2,
+  Copy,
+  Hash,
+  LogOut,
+  UserMinus,
+  Lock,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Trash2,
+} from "lucide-react";
 
 export default function Profilo() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  
+
   // Stati per il form
-  const [nickname, setNickname] = useState('');
-  const [ruolo, setRuolo] = useState('Centrocampista');
-  const [piede, setPiede] = useState('Destro');
+  const [nickname, setNickname] = useState("");
+  const [ruolo, setRuolo] = useState("Centrocampista");
+  const [piede, setPiede] = useState("Destro");
 
   // Stati per la Lega
-  const [codiceLega, setCodiceLega] = useState('');
-  const [nomeLega, setNomeLega] = useState('');
+  const [codiceLega, setCodiceLega] = useState("");
+  const [nomeLega, setNomeLega] = useState("");
 
   // --- STATI PER IL CAMBIO PASSWORD ---
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
@@ -29,7 +45,7 @@ export default function Profilo() {
   // --- FUNZIONE CAMBIO PASSWORD ---
   const handleCambioPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // 1. Controlli di sicurezza base (Client-side)
     if (newPassword.length < 6) {
       alert("La password deve contenere almeno 6 caratteri.");
@@ -44,7 +60,7 @@ export default function Profilo() {
 
     try {
       const { error } = await supabase.auth.updateUser({
-        password: newPassword
+        password: newPassword,
       });
 
       if (error) {
@@ -52,8 +68,8 @@ export default function Profilo() {
         alert("Errore durante l'aggiornamento: " + error.message);
       } else {
         alert("Password aggiornata con successo!");
-        setNewPassword('');
-        setConfirmPassword('');
+        setNewPassword("");
+        setConfirmPassword("");
       }
     } catch (err) {
       alert("Si è verificato un errore imprevisto.");
@@ -64,33 +80,37 @@ export default function Profilo() {
 
   // Funzione per caricare i dati del profilo e della lega
   const caricaDatiProfilo = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
 
     // 1. Carica dati del profilo
     const { data, error } = await supabase
-      .from('player')
-      .select('*')
-      .eq('id', user.id)
+      .from("player")
+      .select("*")
+      .eq("id", user.id)
       .single();
 
     if (data) {
-      setNickname(data.nickname || '');
-      setRuolo(data.ruolo || 'Centrocampista');
-      setPiede(data.piede_forte || 'Destro');
+      setNickname(data.nickname || "");
+      setRuolo(data.ruolo || "Centrocampista");
+      setPiede(data.piede_forte || "Destro");
     }
 
     // 2. Carica codice lega
     const { data: associazione } = await supabase
-      .from('appartenenza_lega')
-      .select(`
+      .from("appartenenza_lega")
+      .select(
+        `
         lega_id,
         lega:lega_id (
           nome_lega,
           codice_accesso
         )
-      `)
-      .eq('player_id', user.id)
+      `
+      )
+      .eq("player_id", user.id)
       .limit(1)
       .single();
 
@@ -114,7 +134,7 @@ export default function Profilo() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Soccer Manager - Unisciti alla mia Lega!',
+          title: "Soccer Manager - Unisciti alla mia Lega!",
           text: text,
         });
       } catch (err) {
@@ -129,25 +149,25 @@ export default function Profilo() {
   // Funzione per salvare le modifiche al profilo
   const salvaProfilo = async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) return;
 
     //  Upsert: se il record esiste, aggiorna; altrimenti, crea un nuovo record
-    const { error } = await supabase
-      .from('player')
-      .upsert({
-        id: user.id,
-        nickname: nickname,
-        ruolo: ruolo,
-        piede_forte: piede
+    const { error } = await supabase.from("player").upsert({
+      id: user.id,
+      nickname: nickname,
+      ruolo: ruolo,
+      piede_forte: piede,
     });
 
     if (error) {
       alert("Errore nel salvataggio: " + error.message);
     } else {
       alert("Profilo aggiornato con successo!");
-      navigate('/home');
+      navigate("/home");
     }
     setLoading(false);
   };
@@ -160,7 +180,7 @@ export default function Profilo() {
       if (error) {
         alert("Errore durante il logout: " + error.message);
       } else {
-        navigate('/');
+        navigate("/");
       }
     }
   };
@@ -170,28 +190,55 @@ export default function Profilo() {
     const conferma = window.confirm(
       `Sei sicuro di voler uscire dalla lega "${nomeLega}"? Non vedrai più le partite e le convocazioni.`
     );
-    
+
     if (conferma) {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) return;
 
       const { error } = await supabase
-        .from('appartenenza_lega')
+        .from("appartenenza_lega")
         .delete()
-        .eq('player_id', user.id);
+        .eq("player_id", user.id);
 
       if (error) {
         alert("Errore durante l'uscita: " + error.message);
       } else {
         alert("Sei uscito dalla lega.");
 
-        await supabase.from('player').update({ manager: false }).eq('id', user.id);
-        
-        navigate('/home');
+        await supabase
+          .from("player")
+          .update({ manager: false })
+          .eq("id", user.id);
+
+        navigate("/home");
       }
       setLoading(false);
+    }
+  };
+
+  // Funzione per eliminare l'account
+  const handleDeleteAccount = async () => {
+    // 1. Chiediamo conferma per evitare click accidentali
+    const confirmed = window.confirm(
+      "Sei sicuro di voler eliminare definitivamente il tuo account? Questa azione non può essere annullata e perderai tutti i dati della tua squadra."
+    );
+
+    if (!confirmed) return;
+
+    // 2. Chiamiamo la regola speciale che abbiamo creato su Supabase
+    const { error } = await supabase.rpc("delete_user");
+
+    if (error) {
+      alert("Errore durante l'eliminazione: " + error.message);
+    } else {
+      // 3. Se va a buon fine, facciamo il logout forzato e lo mandiamo via
+      await supabase.auth.signOut();
+      alert("Account eliminato con successo. Ci dispiace vederti andare via!");
+      navigate("/register");
     }
   };
 
@@ -199,31 +246,34 @@ export default function Profilo() {
     <div className="max-w-md mx-auto min-h-screen bg-gray-50 font-sans pb-10">
       {/* Header */}
       <div className="bg-white p-5 shadow-sm flex items-center gap-4 sticky top-0 z-10">
-        <button onClick={() => navigate('/home')} className="p-1">
+        <button onClick={() => navigate("/home")} className="p-1">
           <ArrowLeft className="w-6 h-6 text-gray-600" />
         </button>
         <h1 className="text-xl font-bold">Il Tuo Profilo</h1>
       </div>
 
       <div className="p-5 space-y-6">
-        
         {/* Sezione codice lega */}
         {codiceLega && (
           <div className="bg-emerald-600 rounded-3xl p-6 text-white shadow-lg shadow-emerald-100 relative overflow-hidden">
             <Hash className="absolute -right-4 -bottom-4 w-24 h-24 opacity-10 rotate-12" />
-            
+
             <div className="relative z-10">
-              <p className="text-emerald-100 text-xs font-bold uppercase tracking-widest mb-1">La tua Lega: {nomeLega}</p>
-              <h2 className="text-3xl font-black mb-4 tracking-tighter">{codiceLega}</h2>
-              
+              <p className="text-emerald-100 text-xs font-bold uppercase tracking-widest mb-1">
+                La tua Lega: {nomeLega}
+              </p>
+              <h2 className="text-3xl font-black mb-4 tracking-tighter">
+                {codiceLega}
+              </h2>
+
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={copyToClipboard}
                   className="flex-1 bg-white/20 hover:bg-white/30 backdrop-blur-md py-2 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all"
                 >
                   <Copy className="w-4 h-4" /> Copia
                 </button>
-                <button 
+                <button
                   onClick={shareCode}
                   className="flex-1 bg-white text-emerald-600 py-2 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all shadow-sm"
                 >
@@ -236,8 +286,10 @@ export default function Profilo() {
 
         {/* Sezione Nickname */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <label className="block text-xs font-bold text-gray-400 uppercase mb-3">Nickname</label>
-          <input 
+          <label className="block text-xs font-bold text-gray-400 uppercase mb-3">
+            Nickname
+          </label>
+          <input
             type="text"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
@@ -252,7 +304,7 @@ export default function Profilo() {
             <label className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2 mb-3">
               <Target className="w-3 h-3" /> Ruolo
             </label>
-            <select 
+            <select
               value={ruolo}
               onChange={(e) => setRuolo(e.target.value)}
               className="w-full bg-transparent font-bold text-gray-800 outline-none"
@@ -268,7 +320,7 @@ export default function Profilo() {
             <label className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2 mb-3">
               <Activity className="w-3 h-3" /> Piede
             </label>
-            <select 
+            <select
               value={piede}
               onChange={(e) => setPiede(e.target.value)}
               className="w-full bg-transparent font-bold text-gray-800 outline-none"
@@ -281,30 +333,30 @@ export default function Profilo() {
         </div>
 
         {/* Pulsante Salva */}
-        <button 
+        <button
           onClick={salvaProfilo}
           disabled={loading}
           className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg flex justify-center items-center gap-2 transition-all ${
-            loading ? 'bg-gray-400' : 'bg-emerald-500 hover:bg-emerald-600 active:scale-95 shadow-emerald-100'
+            loading
+              ? "bg-gray-400"
+              : "bg-emerald-500 hover:bg-emerald-600 active:scale-95 shadow-emerald-100"
           }`}
         >
           <Save className="w-5 h-5" />
-          {loading ? 'Salvataggio...' : 'Salva Profilo'}
+          {loading ? "Salvataggio..." : "Salva Profilo"}
         </button>
 
         {codiceLega && (
-            <div className="pt-2">
-            <button 
-                onClick={handleLeaveLega}
-                className="w-full py-3 rounded-xl text-sm font-bold text-gray-500 border border-gray-200 hover:bg-gray-100 flex justify-center items-center gap-2 transition-all"
+          <div className="pt-2">
+            <button
+              onClick={handleLeaveLega}
+              className="w-full py-3 rounded-xl text-sm font-bold text-gray-500 border border-gray-200 hover:bg-gray-100 flex justify-center items-center gap-2 transition-all"
             >
-                <UserMinus className="w-4 h-4" />
-                Abbandona la lega corrente
+              <UserMinus className="w-4 h-4" />
+              Abbandona la lega corrente
             </button>
-            </div>
+          </div>
         )}
-
-        
 
         <div className="h-0"></div>
 
@@ -318,7 +370,6 @@ export default function Profilo() {
           </div>
 
           <form onSubmit={handleCambioPassword} className="space-y-4">
-            
             {/* Nuova Password */}
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
@@ -340,7 +391,11 @@ export default function Profilo() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -369,32 +424,40 @@ export default function Profilo() {
               type="submit"
               disabled={passwordLoading || !newPassword || !confirmPassword}
               className={`w-full font-bold py-3 rounded-xl transition-all active:scale-95 flex justify-center items-center gap-2
-                ${passwordLoading || !newPassword || !confirmPassword
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200'
+                ${
+                  passwordLoading || !newPassword || !confirmPassword
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200"
                 }`}
             >
-              {passwordLoading ? 'Aggiornamento...' : 'Aggiorna Password'}
+              {passwordLoading ? "Aggiornamento..." : "Aggiorna Password"}
             </button>
-            
           </form>
         </div>
       </div>
 
       <div className="h-0"></div>
 
-        <div className="pt-4 border-t border-gray-100">
-            <button 
-            onClick={handleLogout}
-            className="w-full py-4 rounded-2xl font-bold text-red-500 bg-red-50 hover:bg-red-100 flex justify-center items-center gap-2 transition-all active:scale-95"
-            >
-            <LogOut className="w-5 h-5" />
-            Esci dall'account
-            </button>
-            <p className="text-center text-[10px] text-gray-400 mt-4 uppercase tracking-widest font-bold">
-            Soccer Manager v1.0
-            </p>
-        </div>
+      <div className="pt-4 border-t border-gray-100">
+        <button
+          onClick={handleLogout}
+          className="w-full py-4 rounded-2xl font-bold text-red-500 bg-red-50 hover:bg-red-100 flex justify-center items-center gap-2 transition-all active:scale-95"
+        >
+          <LogOut className="w-5 h-5" />
+          Esci dall'account
+        </button>
+        {/* Bottone Eliminazione Account */}
+        <button
+          onClick={handleDeleteAccount}
+          className="w-full bg-white border-2 border-red-100 text-red-500 font-bold py-3 rounded-xl hover:bg-red-50 active:scale-95 transition-all flex items-center justify-center gap-2"
+        >
+          <Trash2 className="w-5 h-5" />
+          ELIMINA ACCOUNT
+        </button>
+        <p className="text-center text-[10px] text-gray-400 mt-4 uppercase tracking-widest font-bold">
+          Soccer Manager v1.0
+        </p>
+      </div>
     </div>
   );
 }

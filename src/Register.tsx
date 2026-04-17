@@ -1,21 +1,21 @@
-import React, { useState } from 'react';
-import { Mail, Lock, User, UserPlus, ArrowRight } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from './supabase';
+import React, { useState } from "react";
+import { Mail, Lock, User, UserPlus, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "./supabase";
 
 export default function Register() {
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confermaPassword, setConfermaPassword] = useState('');
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confermaPassword, setConfermaPassword] = useState("");
   const navigate = useNavigate();
 
   // Funzione per gestire la registrazione
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confermaPassword) {
-      alert('Le password non coincidono!');
+      alert("Le password non coincidono!");
       return;
     }
 
@@ -24,36 +24,39 @@ export default function Register() {
       password: password,
       options: {
         data: {
-          nome_giocatore: nome, 
-        }
-      }
+          nome_giocatore: nome,
+          emailRedirectTo: `${window.location.origin}/welcome`,
+        },
+      },
     });
-    
+
     if (error) {
       alert("Errore: " + error.message);
       return;
     }
 
-    alert("Fantastico! Ti abbiamo inviato un link di conferma. Controlla la tua casella email (anche nello Spam) per attivare l'account.");
-    navigate('/');
+    alert(
+      "Fantastico! Ti abbiamo inviato un link di conferma. Controlla la tua casella email (anche nello Spam) per attivare l'account."
+    );
+    navigate("/");
   };
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-gray-50 flex flex-col justify-center px-5 font-sans py-10">
-      
       {/* Intestazione */}
       <div className="flex flex-col items-center mb-8">
         <div className="bg-emerald-500 p-4 rounded-full mb-4 shadow-lg shadow-emerald-200">
           <UserPlus className="w-8 h-8 text-white" />
         </div>
         <h1 className="text-3xl font-black text-gray-900">Crea Account</h1>
-        <p className="text-gray-500 text-sm mt-2 font-medium">Unisciti allo spogliatoio</p>
+        <p className="text-gray-500 text-sm mt-2 font-medium">
+          Unisciti allo spogliatoio
+        </p>
       </div>
 
       {/* Card del Form */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <form onSubmit={handleRegister} className="space-y-4">
-          
           {/* Input Nome */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
@@ -148,12 +151,14 @@ export default function Register() {
 
       {/* Link al Login */}
       <p className="text-center text-sm text-gray-500 mt-8 font-medium">
-        Hai già un account?{' '}
-        <Link to="/" className="font-bold text-emerald-600 hover:text-emerald-700">
+        Hai già un account?{" "}
+        <Link
+          to="/"
+          className="font-bold text-emerald-600 hover:text-emerald-700"
+        >
           Accedi
         </Link>
       </p>
-      
     </div>
   );
 }

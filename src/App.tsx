@@ -13,6 +13,7 @@ import ModificaPartita from "./ModificaPartita";
 import Classifica from "./Classifica";
 import ResetPassword from "./ResetPassword";
 import ProtectedRoute from "./ProtectedRoute";
+import Welcome from "./Welcome";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/welcome" element={<Welcome />} />
 
         {/* --- ROTTE PRIVATE --- */}
         <Route element={<ProtectedRoute />}>
