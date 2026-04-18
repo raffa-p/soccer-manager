@@ -14,6 +14,7 @@ import Classifica from "./Classifica";
 import ResetPassword from "./ResetPassword";
 import ProtectedRoute from "./ProtectedRoute";
 import Welcome from "./Welcome";
+import EditLega from "./EditLega";
 import { inject } from "@vercel/analytics";
 
 inject();
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="/modifica-partita/:id" element={<ModificaPartita />} />
           <Route path="/classifica" element={<Classifica />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/edit-lega/:id" element={<EditLega />} />
         </Route>
       </Routes>
     </BrowserRouter>

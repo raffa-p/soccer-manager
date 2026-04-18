@@ -17,6 +17,7 @@ import {
   EyeOff,
   KeyRound,
   Trash2,
+  Pencil,
 } from "lucide-react";
 
 export default function Profilo() {
@@ -31,6 +32,8 @@ export default function Profilo() {
   // Stati per la Lega
   const [codiceLega, setCodiceLega] = useState("");
   const [nomeLega, setNomeLega] = useState("");
+  const [isManager, setIsManager] = useState(false);
+  const [idLega, setLegaId] = useState<any>(null);
 
   // --- STATI PER IL CAMBIO PASSWORD ---
   const [newPassword, setNewPassword] = useState("");
@@ -119,8 +122,23 @@ export default function Profilo() {
       setCodiceLega(associazione.lega.codice_accesso);
       // @ts-ignore
       setNomeLega(associazione.lega.nome_lega);
+      setLegaId(associazione.lega_id);
     }
+
+    // 3. Carica manager
+    const { data: giocatore } = await supabase
+        .from('player')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+    
+        if (giocatore) {
+          if (giocatore.manager) {
+            setIsManager(true);
+          }
+        }
   };
+
 
   // Funzione per copiare il codice lega negli appunti
   const copyToClipboard = () => {
@@ -257,7 +275,14 @@ export default function Profilo() {
         {codiceLega && (
           <div className="bg-emerald-600 rounded-3xl p-6 text-white shadow-lg shadow-emerald-100 relative overflow-hidden">
             <Hash className="absolute -right-4 -bottom-4 w-24 h-24 opacity-10 rotate-12" />
-
+            {isManager && (
+              <button 
+                onClick={() => navigate(`/edit-lega/${idLega}`)}
+                className="absolute top-4 right-4 p-2 bg-gray-50 text-gray-400 hover:text-blue-500 rounded-full transition-colors"
+              >
+                <Pencil className="w-4 h-4" /> {/* Oppure l'icona Edit/Pencil */}
+              </button>
+            )}
             <div className="relative z-10">
               <p className="text-emerald-100 text-xs font-bold uppercase tracking-widest mb-1">
                 La tua Lega: {nomeLega}
