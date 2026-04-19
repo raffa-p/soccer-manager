@@ -1,356 +1,486 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, User, Calendar, Shirt, AlertCircle, ChevronRight, PlusCircle, Hash, MapPin, Clock, ClipboardList, Users, Settings, Edit, Pencil, Trophy } from 'lucide-react';
+import { Bell, User, Calendar, Shirt, AlertCircle, ChevronRight, PlusCircle, Hash, MapPin, Clock, ClipboardList, Users, Settings, Edit, Pencil, Trophy, TrophyIcon, X, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
 
 export default function Home() {
   const navigate = useNavigate();
-  const [nome, setNome] = useState('Giocatore');
-  const [isManager, setIsManager] = useState(false);
-  const [profiloIncompleto, setProfiloIncompleto] = useState(false);
-  const [hasLega, setHasLega] = useState(true); 
+  
   const [loading, setLoading] = useState(true);
-  const [codiceLega, setCodiceLega] = useState('');
+  
+  // -- STATI UTENTE --
+  const [nome, setNome] = useState('Giocatore');
   const [userId, setUserId] = useState('');
+  const [profiloIncompleto, setProfiloIncompleto] = useState(false);
+  
+  // -- STATI LEGA
+  const [hasLega, setHasLega] = useState(true); 
+  const [codiceLega, setCodiceLega] = useState('');
+  const [isManager, setIsManager] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [leagues, setLeagues] = useState<any[]>([]); // Tutte le leghe dell'utente
+  const [activeLeague, setActiveLeague] = useState<any>(null); // Calcolato sulla lega attiva
+
   // Dati Partita
   const [actionLoading, setActionLoading] = useState(false); // Per i tasti Ci sono/Salto
   const [prossimaPartita, setProssimaPartita] = useState<any>(null);
   const [confermati, setConfermati] = useState(0);
   const [ioCiSono, setIoCiSono] = useState(false);
-
   const [ultimaPartita, setUltimaPartita] = useState<any>(null);
 
+  // --- STATI LISTA CONFERMATI ---
+  const [confermatiList, setConfermatiList] = useState<any[]>([]);
+  const [isConfermatiModalOpen, setIsConfermatiModalOpen] = useState(false);
   
-const controllaStato = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
+  // CARICAMENTO INIZIALE
+  useEffect(() => {
+    caricaUtenteELeghe();
+  }, [navigate]);
   
-  if (!user) {
-    navigate('/');
-    return;
-  }
-  setUserId(user.id);
-  if (user.user_metadata?.nome_giocatore) {
-    setNome(user.user_metadata.nome_giocatore);
-  }
-
-  // 1. Dati Player
-  const { data: giocatore } = await supabase
-    .from('player')
-    .select('*, appartenenza_lega(lega_id)')
-    .eq('id', user.id)
-    .single();
-
-  if (giocatore) {
-    const {data: managagerCheck} = await supabase
-    .from('lega')
-    .select('manager1, manager2, manager3')
-    .eq('id', giocatore.appartenenza_lega[0].lega_id)
-    .single();
-    if(managagerCheck && (managagerCheck.manager1 === user.id || managagerCheck.manager2 === user.id || managagerCheck.manager3 === user.id)) {
-      setIsManager(true);
+  useEffect(() => {
+    if (activeLeague && userId) {
+      caricaPartiteLega(activeLeague.id);
     }
-    if (!giocatore.ruolo || !giocatore.piede_forte) {
+  }, [activeLeague, userId]);
+
+// --- CARICA UTENTE E LEGHE ---
+  const caricaUtenteELeghe = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      navigate('/');
+      return;
+    }
+    setUserId(user.id);
+    if (user.user_metadata?.nome_giocatore) {
+      setNome(user.user_metadata.nome_giocatore);
+    }
+
+    // Controllo Profilo Completo
+    const { data: giocatore } = await supabase
+      .from('player')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (giocatore) {
+      if (!giocatore.ruolo || !giocatore.piede_forte) {
+        setProfiloIncompleto(true);
+      }
+    } else {
       setProfiloIncompleto(true);
     }
-  } else {
-    setProfiloIncompleto(true);
-  }
 
-  // 2. Controllo Leghe
-  const { data: leghe } = await supabase
-    .from('appartenenza_lega')
-    .select('lega_id')
-    .eq('player_id', user.id);
+    // Recupero TUTTE le leghe (Inner Join per avere nome e manager)
+    const { data: legheData } = await supabase
+      .from('appartenenza_lega')
+      .select(`
+        lega_id,
+        lega!inner ( id, nome_lega, manager1, manager2, manager3 )
+      `)
+      .eq('player_id', user.id);
 
-  setHasLega((leghe?.length ?? 0) > 0);
-  
-  let legaId: any;
-  if (leghe && leghe.length > 0) {
-    legaId = leghe[0].lega_id;
-  }
+    if (legheData && legheData.length > 0) {
+      // Estraiamo l'oggetto "lega" dall'array dei risultati
+      const legheFormattate = legheData.map((item: any) => item.lega);
+      setLeagues(legheFormattate);
+      setActiveLeague(legheFormattate[0]); // Imposta la prima come default
+      setHasLega(true);
+    } else {
+      setHasLega(false);
+      setLoading(false); // Finiamo qui se non ha leghe
+    }
+  };
 
-  // 3. Recupero la partita più vicina nel futuro
-  if (legaId) {
+  // --- FUNZIONE: CARICA DATI SPECIFICI DELLA LEGA ATTIVA ---
+  const caricaPartiteLega = async (legaId: string) => {
+    // Controllo se in QUESTA lega l'utente è un manager
+    if (
+      activeLeague.manager1 === userId || 
+      activeLeague.manager2 === userId || 
+      activeLeague.manager3 === userId
+    ) {
+      setIsManager(true);
+    } else {
+      setIsManager(false);
+    }
+
+    // Resettiamo gli stati delle partite prima di caricare i nuovi
+    setProssimaPartita(null);
+    setUltimaPartita(null);
+    setConfermati(0);
+    setIoCiSono(false);
+
+    // Recupero Prossima Partita
     const { data: partita } = await supabase
       .from('partita')
       .select('*')
       .eq('lega_id', legaId)
-      .gte('giorno', new Date().toISOString()) // Solo partite da oggi in poi
+      .gte('giorno', new Date().toISOString())
       .order('giorno', { ascending: true })
       .limit(1)
       .maybeSingle();
 
-    if (partita) { setProssimaPartita(partita); }
+    if (partita) { 
+      setProssimaPartita(partita); 
 
-    // 4. Calcoliamo i confermati per questa partita
-      const { count, data: partecipazioni } = await supabase
+      // Recupero confermati per QUESTA partita
+      const { data: partecipazioni } = await supabase
         .from('partecipazione_partita')
-        .select('giocatore', { count: 'exact' })
+        .select('giocatore, player(*)')
         .eq('id_partita', partita.id);
-        
-      if (count !== null) setConfermati(count);
-
-      // 5. Controlliamo se IO mi sono già segnato
-      const miSonoSegnato = partecipazioni?.some(p => p.giocatore === user.id);
-      setIoCiSono(miSonoSegnato || false);
-
-
-      const { data: ultima } = await supabase
-        .from('partita')
-        .select('*')
-        .eq('lega_id', legaId)
-        .lt('giorno', new Date().toISOString()) // Data < Oggi
-        .order('giorno', { ascending: false })   // La più recente per prima
-        .limit(1)
-        .maybeSingle();
-
-      if (ultima) {
-        setUltimaPartita(ultima);
+      
+      if(partecipazioni) {
+        const listaConfermati = partecipazioni.map((p: any) => p.player).filter(Boolean);
+        setConfermatiList(listaConfermati);
+        setConfermati(listaConfermati.length);
+        console.log("Partecipazioni:", listaConfermati);
       }
-  }
+      // Controlliamo se IO mi sono già segnato
+      const miSonoSegnato = partecipazioni?.some(p => p.giocatore === userId);
+      setIoCiSono(miSonoSegnato || false);
+    }
 
+    // Recupero Ultima Partita
+    const { data: ultima } = await supabase
+      .from('partita')
+      .select('*')
+      .eq('lega_id', legaId)
+      .lt('giorno', new Date().toISOString())
+      .order('giorno', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  setLoading(false);
-};
+    if (ultima) {
+      setUltimaPartita(ultima);
+    }
 
-useEffect(() => {
-  controllaStato();
-}, [navigate]);
+    setLoading(false);
+  };
 
-const handleConferma = async () => {
+  // --- FUNZIONE: SELEZIONA LEGA DAL MENU ---
+  const handleSelectLeague = (lega: any) => {
+    setLoading(true);
+    setActiveLeague(lega);
+    setIsSidebarOpen(false); // Chiudi il menu
+  };
+
+  // --- FUNZIONI DI GESTIONE PRESENZA PARTITA ---
+  const handleConferma = async () => {
     if (!prossimaPartita || ioCiSono) return;
     setActionLoading(true);
-
-    // Stampiamo in console i dati che stiamo per inviare
-    console.log("Provo a inserire:", { id_partita: prossimaPartita.id, giocatore: userId });
 
     const { error } = await supabase
       .from('partecipazione_partita')
       .insert([{ id_partita: prossimaPartita.id, giocatore: userId }]);
 
     if (error) {
-      // 🚨 ECCO LA MAGIA: Ora vediamo ESATTAMENTE perché Postgres si arrabbia
-      console.error("ERRORE DATABASE COMPLETO:", error);
       alert(`Errore Database!\nCodice: ${error.code}\nMessaggio: ${error.message}`);
     } else {
       setIoCiSono(true);
-      setConfermati(prev => prev + 1);
+      setConfermatiList(prev => [
+        ...prev, 
+        { id: userId, nickname: nome, ruolo: 'Giocatore' } 
+      ]);
     }
     setActionLoading(false);
   };
 
+  // Funzione per annullare la propria presenza (Salto)
   const handleSalto = async () => {
-  // Se non c'è una partita o se l'utente non è già tra i confermati, non fare nulla
-  if (!prossimaPartita || !ioCiSono) return;
-  
-  const confermaScelta = window.confirm("Sei sicuro di voler annullare la tua presenza?");
-  if (!confermaScelta) return;
+    if (!prossimaPartita || !ioCiSono) return;
+    
+    const confermaScelta = window.confirm("Sei sicuro di voler annullare la tua presenza?");
+    if (!confermaScelta) return;
 
-  setActionLoading(true);
+    setActionLoading(true);
 
-  const { error } = await supabase
-    .from('partecipazione_partita')
-    .delete()
-    .eq('id_partita', prossimaPartita.id)
-    .eq('giocatore', userId); // Elimina solo la riga di questo utente per questa partita
+    const { error } = await supabase
+      .from('partecipazione_partita')
+      .delete()
+      .eq('id_partita', prossimaPartita.id)
+      .eq('giocatore', userId); // Elimina solo la riga di questo utente per questa partita
 
-  if (error) {
-    console.error("Errore cancellazione:", error);
-    alert("Errore durante l'annullamento: " + error.message);
-  } else {
-    // Aggiornamento ottimistico della UI
-    setIoCiSono(false);
-    setConfermati(prev => Math.max(0, prev - 1)); // Evitiamo numeri negativi per sicurezza
-  }
-  
-  setActionLoading(false);
-};
-  // Funzione per formattare la data (es: "Giovedì 23 Maggio")
+    if (error) {
+      console.error("Errore cancellazione:", error);
+      alert("Errore durante l'annullamento: " + error.message);
+    } else {
+      setIoCiSono(false);
+      setConfermatiList(prev => prev.filter(p => p.id !== userId));
+    }
+    
+    setActionLoading(false);
+  };
+
+  // --- FUNZIONE: UNISCITI A LEGA ESISTENTE ---
+  const handleJoinLega = async () => {
+    // 1. Controllo che il campo non sia vuoto
+    if (!codiceLega.trim()) {
+      alert("Per favore, inserisci un codice lega.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // 2. Controllo se la lega con quell'ID esiste
+      const { data: legaEsistente, error: erroreLega } = await supabase
+        .from('lega')
+        .select('id, nome_lega')
+        .eq('codice_accesso', codiceLega.toUpperCase())
+        .single();
+
+      if (erroreLega || !legaEsistente) {
+        alert("Codice errato: nessuna lega trovata con questo ID.");
+        setLoading(false);
+        return;
+      }
+
+      // 3. Recupero l'ID dell'utente corrente
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: playerEsistente } = await supabase
+        .from('player')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (!playerEsistente) {
+        const { error: errorNewPlayer } = await supabase
+          .from('player')
+          .insert([{ id: user.id }]);
+          
+        if (errorNewPlayer) {
+          alert("Vai prima sul tuo Profilo (in alto a sinistra) e salva i dati base per continuare!");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 4. Inserisco la riga in appartenenza_lega
+      const { error: erroreInserimento } = await supabase
+        .from('appartenenza_lega')
+        .insert([
+          { 
+            player_id: user.id, 
+            lega_id: legaEsistente.id 
+          }
+        ]);
+
+      if (erroreInserimento) {
+        if (erroreInserimento.code === '23505') {
+          alert("Sei già iscritto a questa lega!");
+        } else {
+          alert("Errore durante l'iscrizione: " + erroreInserimento.message);
+        }
+      } else {
+        alert(`Benvenuto nella lega: ${legaEsistente.nome_lega}!`);
+        window.location.reload(); // Ricarica per scaricare le nuove leghe
+      }
+    } catch (err) {
+      alert("Si è verificato un errore inaspettato.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- FUNZIONE: CREA NUOVA LEGA ---
+  const handleCreateLega = async () => {
+    const nomeLega = prompt("Inserisci il nome della tua nuova Lega:");
+    if (!nomeLega || nomeLega.trim() === "") return alert("Il nome della lega è obbligatorio.");
+    setLoading(true);
+    try {
+      const nuovoCodice = generaCodiceCasuale();
+      const { data: nuovaLega, error: erroreLega } = await supabase
+        .from('lega')
+        .insert([{ nome_lega: nomeLega, manager1: userId, codice_accesso: nuovoCodice }])
+        .select()
+        .single();
+
+      if (erroreLega) throw erroreLega;
+
+      const { error: erroreAssociazione } = await supabase
+        .from('appartenenza_lega')
+        .insert([{ player_id: userId, lega_id: nuovaLega.id }]);
+
+      if (erroreAssociazione) throw erroreAssociazione;
+
+      await supabase.from('player').update({ manager: true }).eq('id', userId);
+
+      alert(`Lega "${nomeLega}" creata!\nCodice di accesso: ${nuovoCodice}`);
+      window.location.reload(); 
+    } catch (error: any) {
+      alert("Errore durante la creazione: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  // --- FUNZIONI DI UTILITÀ ---
+  // Funzione per formattare la data
   const formattaData = (isoString: string) => {
     const date = new Date(isoString);
     return date.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
   };
-
-  // Funzione per l'ora (es: "21:00")
+  // Funzione per formattare l'ora
   const formattaOra = (isoString: string) => {
     const date = new Date(isoString);
     return date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
   };
-
-const handleJoinLega = async () => {
-  // 1. Controllo che il campo non sia vuoto
-  if (!codiceLega.trim()) {
-    alert("Per favore, inserisci un codice lega.");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    // 2. Controllo se la lega con quell'ID esiste
-    const { data: legaEsistente, error: erroreLega } = await supabase
-      .from('lega')
-      .select('id, nome_lega')
-      .eq('codice_accesso', codiceLega.toUpperCase())
-      .single();
-
-    if (erroreLega || !legaEsistente) {
-      alert("Codice errato: nessuna lega trovata con questo ID.");
-      setLoading(false);
-      return;
+  // Funzione per generare un codice casuale di 5 caratteri (per la lega)
+  const generaCodiceCasuale = () => {
+    const caratteri = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let risultato = '';
+    for (let i = 0; i < 5; i++) {
+      risultato += caratteri.charAt(Math.floor(Math.random() * caratteri.length));
     }
+    return risultato;
+  };
 
-    // 3. Recupero l'ID dell'utente corrente
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: playerEsistente } = await supabase
-      .from('player')
-      .select('id')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (!playerEsistente) {
-      // Se è nuovo di zecca, gli creiamo una riga "vuota" in player
-      const { error: errorNewPlayer } = await supabase
-        .from('player')
-        .insert([{ id: user.id }]);
-        
-      if (errorNewPlayer) {
-        alert("Vai prima sul tuo Profilo (in alto a sinistra) e salva i dati base per continuare!");
-        setLoading(false);
-        return;
-      }
-    }
-
-    // 4. Inserisco la riga in appartenenza_lega
-    const { error: erroreInserimento } = await supabase
-      .from('appartenenza_lega')
-      .insert([
-        { 
-          player_id: user.id, 
-          lega_id: legaEsistente.id 
-        }
-      ]);
-
-    if (erroreInserimento) {
-      if (erroreInserimento.code === '23505') {
-        alert("Sei già iscritto a questa lega!");
-      } else {
-        alert("Errore durante l'iscrizione: " + erroreInserimento.message);
-      }
-    } else {
-      alert(`Benvenuto nella lega: ${legaEsistente.nome_lega}!`);
-      setHasLega(true); // Aggiorna la UI e mostra il contenuto della home
-    }
-
-  } catch (err) {
-    alert("Si è verificato un errore inaspettato.");
-  } finally {
-    setLoading(false);
-  }
-};
-
-const generaCodiceCasuale = () => {
-  const caratteri = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let risultato = '';
-  for (let i = 0; i < 5; i++) {
-    risultato += caratteri.charAt(Math.floor(Math.random() * caratteri.length));
-  }
-  return risultato;
-};
-const handleCreateLega = async () => {
-  const nomeLega = prompt("Inserisci il nome della tua nuova Lega:");
-  
-  if (!nomeLega || nomeLega.trim() === "") {
-    alert("Il nome della lega è obbligatorio.");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    // Generiamo un codice e proviamo a inserire
-    const nuovoCodice = generaCodiceCasuale();
-
-    // 1. Inseriamo la nuova lega
-    const { data: nuovaLega, error: erroreLega } = await supabase
-      .from('lega')
-      .insert([
-        { 
-          nome_lega: nomeLega, 
-          manager1: user.id,
-          codice_accesso: nuovoCodice 
-        }
-      ])
-      .select()
-      .single();
-
-    if (erroreLega) throw erroreLega;
-
-    // 2. Associamo automaticamente il creatore alla lega appena creata
-    const { error: erroreAssociazione } = await supabase
-      .from('appartenenza_lega')
-      .insert([
-        { 
-          player_id: user.id, 
-          lega_id: nuovaLega.id 
-        }
-      ]);
-
-    if (erroreAssociazione) throw erroreAssociazione;
-
-    // 3. Aggiorniamo il player per farlo diventare manager (se non lo è già)
-    await supabase
-      .from('player')
-      .update({ manager: true })
-      .eq('id', user.id);
-
-    alert(`Lega "${nomeLega}" creata con successo!\nIl tuo codice di accesso è: ${nuovoCodice}`);
-    
-    // Ricarichiamo la pagina per mostrare la home attiva
-    window.location.reload(); 
-
-  } catch (error: any) {
-    // Se il codice casuale dovesse già esistere (raro), chiediamo di riprovare
-    if (error.code === '23505') {
-      alert("Errore di generazione codice univoco. Riprova.");
-    } else {
-      alert("Errore durante la creazione: " + error.message);
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-
-  if (loading) return <div className="p-10 text-center font-bold text-gray-400">Caricamento...</div>;
+  if (loading && !activeLeague) return <div className="p-10 text-center font-bold text-emerald-600">Caricamento ...</div>;
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
       
-      <header className="flex justify-between items-center p-5 bg-white shadow-sm sticky top-0 z-10">
-        <div onClick={() => navigate('/profilo')} className="flex items-center gap-3 cursor-pointer group">
-          <div className="bg-gray-100 rounded-full p-1 group-hover:bg-emerald-50 transition-colors">
-            <User className="text-gray-400 w-8 h-8 group-hover:text-emerald-500" />
+      {/* --- MODALE CONFERMATI --- */}
+      {isConfermatiModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-emerald-50">
+              <h3 className="text-lg font-black text-emerald-900 flex items-center gap-2">
+                <Users className="w-5 h-5 text-emerald-600" />
+                Giocatori Confermati
+              </h3>
+              <button onClick={() => setIsConfermatiModalOpen(false)} className="p-2 bg-white text-gray-500 hover:text-red-500 rounded-full shadow-sm transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-2 overflow-y-auto flex-1">
+              {confermatiList.length === 0 ? (
+                <div className="text-center p-10 text-gray-400">
+                  <p>Nessuno si è ancora segnato.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {confermatiList.map((giocatore, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 font-bold flex items-center justify-center text-sm">
+                        {i + 1}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-800">{giocatore.nickname || 'Giocatore'}</p>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider">{giocatore.ruolo}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-gray-800 group-hover:text-emerald-600">
-            Ciao, {nome}!
-          </h1>
         </div>
-        {/* TASTO CLASSIFICA */}
-        <button 
-          onClick={() => navigate('/classifica')}
-          className="relative p-3 bg-amber-50 text-amber-500 rounded-full hover:bg-amber-100 transition-colors shadow-sm active:scale-95"
-        >
-          <Trophy className="w-6 h-6" />
-        </button>
-        {/* <Bell className="text-emerald-500 w-6 h-6 cursor-pointer" /> */}
+      )}
+
+      {/* --- OVERLAY SCURO SIDEBAR --- */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/40 z-40 transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* --- MENU LATERALE (SIDEBAR) --- */}
+      <aside 
+        className={`fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-emerald-600 text-white">
+          <div className="flex items-center gap-2">
+            <TrophyIcon className="w-5 h-5" />
+            <span className="font-bold text-lg">Le tue Leghe</span>
+          </div>
+          <button onClick={() => setIsSidebarOpen(false)} className="p-1 hover:bg-emerald-700 rounded-full transition-colors">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          {leagues.map((lega) => (
+            <button
+              key={lega.id}
+              onClick={() => handleSelectLeague(lega)}
+              className={`w-full text-left p-4 rounded-xl flex items-center justify-between transition-all ${
+                activeLeague?.id === lega.id 
+                  ? 'bg-emerald-50 border-emerald-200 border text-emerald-800 font-bold' 
+                  : 'bg-white border-gray-100 border hover:bg-gray-50 text-gray-700 font-medium'
+              }`}
+            >
+              <span className="truncate pr-2">{lega.nome_lega}</span>
+              {activeLeague?.id === lega.id && <ChevronRight className="w-5 h-5 text-emerald-600 shrink-0" />}
+            </button>
+          ))}
+          
+          <div className="pt-6 mt-6 border-t border-gray-100">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-2">Gestione</p>
+            <button onClick={() => { setIsSidebarOpen(false); setHasLega(false); }} className="w-full flex items-center gap-2 text-sm text-gray-600 p-2 hover:bg-gray-50 rounded-lg">
+              <PlusCircle className="w-4 h-4" /> Unisciti / Crea Nuova Lega
+            </button>
+          </div>
+        </div>
+      </aside>
+      
+      {/* --- HEADER PRINCIPALE --- */}
+      <header className="flex justify-between items-center p-4 bg-white shadow-sm sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+          {/* Tasto Menu (Hamburger) */}
+          {hasLega && (
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 bg-gray-50 rounded-full hover:bg-emerald-50 text-gray-600 hover:text-emerald-600 transition-colors"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          )}
+          
+          <div onClick={() => navigate('/profilo')} className="flex items-center gap-2 cursor-pointer group">
+            <div className="bg-gray-100 rounded-full p-1 group-hover:bg-emerald-50 transition-colors">
+              <User className="text-gray-400 w-8 h-8 group-hover:text-emerald-500" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-800 group-hover:text-emerald-600 leading-tight">
+                Ciao, {nome}!
+              </h1>
+              {/* Mostriamo il nome della lega sotto il saluto */}
+              {activeLeague && hasLega && (
+                <p className="text-[10px] text-emerald-600 font-black uppercase tracking-widest truncate max-w-[140px] bg-emerald-50 px-2 py-0.5 rounded-md mt-0.5 inline-block">
+                  {activeLeague.nome_lega}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {hasLega && (
+          <button 
+            onClick={() => navigate('/classifica')}
+            className="relative p-3 bg-amber-50 text-amber-500 rounded-full hover:bg-amber-100 transition-colors shadow-sm active:scale-95"
+          >
+            <Trophy className="w-6 h-6" />
+          </button>
+        )}
       </header>
 
       <main className="p-4 space-y-6">
+
+        {loading && activeLeague && (
+           <div className="absolute inset-0 bg-gray-50/50 z-10 flex items-center justify-center">
+             <div className="animate-pulse bg-emerald-600 text-white px-4 py-2 rounded-full font-bold shadow-lg">Aggiornamento...</div>
+           </div>
+        )}
         
         {profiloIncompleto && (
           <div 
@@ -424,9 +554,15 @@ const handleCreateLega = async () => {
                 Crea ora
               </button>
             </div>
+            {leagues.length > 0 && (
+              <button onClick={() => setHasLega(true)} className="w-full mt-4 text-sm font-bold text-gray-400 hover:text-gray-600">
+                Torna indietro
+              </button>
+            )}
           </div>
         ) : (
           <>
+            {/* --- DASHBOARD DELLA LEGA ATTIVA --- */}
             {isManager && (
               <div 
                 onClick={() => navigate('/crea-partita')}
@@ -451,7 +587,7 @@ const handleCreateLega = async () => {
                         onClick={() => navigate(`/modifica-partita/${prossimaPartita.id}`)}
                         className="absolute top-4 right-4 p-2 bg-gray-50 text-gray-400 hover:text-blue-500 rounded-full transition-colors"
                       >
-                        <Pencil className="w-4 h-4" /> {/* Oppure l'icona Edit/Pencil */}
+                        <Pencil className="w-4 h-4" />
                       </button>
                     )}
                     <span className="text-emerald-500 text-xs font-bold uppercase tracking-widest">
@@ -482,10 +618,13 @@ const handleCreateLega = async () => {
                 </div>
                 <div className="flex justify-between items-center px-2">
                   <span className="text-sm text-gray-500 font-small uppercase tracking-wider">Stato</span>
-                  {/* CONTEGGIO DINAMICO CONVOCATI */}
-                  <span className="text-sm font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-                    {confermati} Confermati
-                  </span>
+                  {/* --- BADGE CONFERMATI CLICCABILE --- */}
+                  <button 
+                    onClick={() => setIsConfermatiModalOpen(true)}
+                    className="flex items-center gap-1 text-sm font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-full transition-colors active:scale-95 cursor-pointer border border-emerald-100"
+                  >
+                    <Users className="w-4 h-4" /> {confermatiList.length} Confermati
+                  </button>
                 </div>
                 <div className="flex gap-3 pt-2">
                   {/* BOTTONE CI SONO */}
@@ -563,7 +702,7 @@ const handleCreateLega = async () => {
                     onClick={() => navigate('/lista-partite')}
                     className="text-[11px] font-black text-blue-500 hover:text-blue-600 flex items-center gap-1 uppercase tracking-tighter"
                   >
-                    Vedi tutte le partite
+                    Vedi tutte
                     <ChevronRight className="w-3 h-3" />
                   </button>
                 </div>
