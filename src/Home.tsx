@@ -36,12 +36,19 @@ const controllaStato = async () => {
   // 1. Dati Player
   const { data: giocatore } = await supabase
     .from('player')
-    .select('*')
+    .select('*, appartenenza_lega(lega_id)')
     .eq('id', user.id)
     .single();
 
   if (giocatore) {
-    setIsManager(giocatore.manager);
+    const {data: managagerCheck} = await supabase
+    .from('lega')
+    .select('manager1, manager2, manager3')
+    .eq('id', giocatore.appartenenza_lega[0].lega_id)
+    .single();
+    if(managagerCheck && (managagerCheck.manager1 === user.id || managagerCheck.manager2 === user.id || managagerCheck.manager3 === user.id)) {
+      setIsManager(true);
+    }
     if (!giocatore.ruolo || !giocatore.piede_forte) {
       setProfiloIncompleto(true);
     }

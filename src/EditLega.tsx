@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
-import { ArrowLeft, UserMinus, ShieldCheck, Users, AlertTriangle, ShieldOff } from 'lucide-react';
+import { ArrowLeft, UserMinus, ShieldCheck, Users, AlertTriangle, ShieldOff, Layout, Save } from 'lucide-react';
 
 interface Membro {
   id: string;
@@ -19,6 +19,7 @@ export default function EditLega() {
   const [membri, setMembri] = useState<Membro[]>([]);
   const [managerData, setManagerData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     caricaDatiLega();
@@ -85,8 +86,23 @@ export default function EditLega() {
     }
   }
 
-  // --- AZIONI ---
+  // MODIFICA NOME LEGA
+  const handleSaveNomeLega = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nomeLega.trim()) return;
 
+    setSavingName(true);
+    const { error } = await supabase
+      .from('lega')
+      .update({ nome_lega: nomeLega.trim() })
+      .eq('id', id);
+
+    setSavingName(false);
+    if (error) alert(error.message);
+    else alert("Nome della lega aggiornato!");
+  };
+
+  // PROMUOVI A MANAGER
   const handlePromuovi = async (idUtente: string) => {
     // Cerchiamo uno slot libero (manager2 o manager3, manager1 è occupato dal proprietario)
     let slotLibero = '';
@@ -107,6 +123,7 @@ export default function EditLega() {
     else caricaDatiLega();
   };
 
+  // ESPELLI MEMBRO
   const handleEspelli = async (membro: Membro) => {
     if (membro.id === managerData.manager1) {
       alert("Non puoi espellere te stesso!");
@@ -115,14 +132,12 @@ export default function EditLega() {
 
     if (!window.confirm(`Vuoi davvero espellere ${membro.username}?`)) return;
 
-    // 1. Rimuovi dalla tabella appartenenza_lega
     const { error: err1 } = await supabase
       .from('appartenenza_lega')
       .delete()
       .eq('lega_id', id)
       .eq('player_id', membro.id);
 
-    // 2. Se era un manager, libera il campo nella tabella lega
     if (membro.managerSlot) {
       await supabase
         .from('lega')
@@ -134,12 +149,12 @@ export default function EditLega() {
     else caricaDatiLega();
   };
 
+  // DECLASSA MANAGER
   const handleDeclassa = async (membro: Membro) => {
     if (!membro.managerSlot || membro.managerSlot === 'manager1') return;
 
     if (!window.confirm(`Vuoi rimuovere i poteri da manager a ${membro.username}?`)) return;
 
-    // Impostiamo a null la colonna specifica (manager2 o manager3)
     const { error } = await supabase
         .from('lega')
         .update({ [membro.managerSlot]: null })
@@ -149,7 +164,7 @@ export default function EditLega() {
         alert("Errore durante il declassamento: " + error.message);
     } else {
         alert(`${membro.username} non è più un manager.`);
-        caricaDatiLega(); // Rinfresca la lista
+        caricaDatiLega();
     }
   };
 
@@ -163,7 +178,33 @@ export default function EditLega() {
       </header>
 
       <main className="max-w-xl mx-auto mt-6 px-4 space-y-6">
-        
+        {/* --- CARD 1: MODIFICA NOME LEGA --- */}
+        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Layout className="text-emerald-600 w-5 h-5" />
+            <h2 className="font-bold text-gray-800 text-lg">Nome della Lega</h2>
+          </div>
+          
+          <form onSubmit={handleSaveNomeLega} className="space-y-4">
+            <div>
+              <input 
+                type="text"
+                className="w-full border border-gray-200 p-3 rounded-xl bg-gray-50 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all font-medium"
+                value={nomeLega} 
+                onChange={e => setNomeLega(e.target.value)}
+                placeholder="Inserisci il nome della lega..."
+              />
+            </div>
+            <button 
+              type="submit"
+              disabled={savingName}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+            >
+              {savingName ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <Save size={20} />}
+              {savingName ? 'Salvataggio...' : 'Salva Nome Lega'}
+            </button>
+          </form>
+        </section>
         {/* Card Gestione Partecipanti */}
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="bg-gray-50 p-4 border-b flex items-center gap-2">
