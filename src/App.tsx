@@ -15,9 +15,9 @@ import ResetPassword from "./ResetPassword";
 import ProtectedRoute from "./ProtectedRoute";
 import Welcome from "./Welcome";
 import EditLega from "./EditLega";
-import { inject } from "@vercel/analytics";
+//import { inject } from "@vercel/analytics";
 
-inject();
+//inject();
 
 export default function App() {
   return (

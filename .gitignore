@@ -1,2 +1,6 @@
 .env
 node_modules/
+capacitor.config.ts
+src/*.js
+dist/
+android/
