@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
 import {
   ArrowLeft, Save, Target, Activity, Share2, Copy, Hash,
-  LogOut, UserMinus, Lock, Eye, EyeOff, KeyRound, Trash2, Pencil, Trophy
+  LogOut, UserMinus, Lock, Eye, EyeOff, KeyRound, Trash2, Pencil, Trophy,
+  ChevronRight,
+  ShieldCheck
 } from "lucide-react";
 
 export default function Profilo() {
@@ -370,6 +372,23 @@ export default function Profilo() {
             </button>
           </form>
         </div>
+      </div>
+
+      {/* --- CARD PRIVACY --- */}
+      <div 
+        onClick={() => navigate('/privacy-policy')} 
+        className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between gap-4 cursor-pointer active:scale-95 transition-all mt-4"
+      >
+        <div className="flex items-center gap-3">
+          <div className="bg-blue-50 p-2 rounded-xl">
+            <ShieldCheck className="w-5 h-5 text-blue-500" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-gray-800">Privacy & Termini</h4>
+            <p className="text-[11px] text-gray-500 italic">Consulta come proteggiamo i tuoi dati</p>
+          </div>
+        </div>
+        <ChevronRight className="w-5 h-5 text-gray-300" />
       </div>
 
       <div className="pt-4 mt-6 border-t border-gray-200 px-5 space-y-4">

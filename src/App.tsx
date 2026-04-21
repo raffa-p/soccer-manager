@@ -15,6 +15,7 @@ import ResetPassword from "./ResetPassword";
 import ProtectedRoute from "./ProtectedRoute";
 import Welcome from "./Welcome";
 import EditLega from "./EditLega";
+import PrivacyPolicy from "./PrivacyPolicy";
 //import { inject } from "@vercel/analytics";
 
 //inject();
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/register" element={<Register />} />
         <Route path="/welcome" element={<Welcome />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
         {/* --- ROTTE PRIVATE --- */}
         <Route element={<ProtectedRoute />}>
