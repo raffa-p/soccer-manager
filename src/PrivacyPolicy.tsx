@@ -63,8 +63,8 @@ export default function PrivacyPolicy() {
             <Trash2 className="w-5 h-5 text-red-500" /> 4. Eliminazione dei dati
           </h2>
           <p className="text-sm text-gray-600 leading-relaxed">
-            Puoi richiedere l'eliminazione del tuo account e di tutti i dati associati in qualsiasi momento 
-            tramite la sezione Profilo dell'app o contattando l'amministratore.
+            Puoi eliminare il tuo account direttamente dall'interno dell'app (Profilo &gt; Elimina Account).
+            Se hai già disinstallato l'app e desideri eliminare il tuo account e tutti i dati associati (email, nickname, statistiche delle partite), puoi inviare un'email a <a href="mailto:deleteaccount@protadev.com" className="text-blue-500 hover:underline">deleteaccount@protadev.com</a> con oggetto "Richiesta Eliminazione Account". I tuoi dati verranno cancellati definitivamente dai nostri server entro 60 giorni.
           </p>
         </section>
 
