@@ -144,7 +144,7 @@ export default function VisualizzaFormazione() {
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-10 font-sans">
-      <div className="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-30">
+      <div className="bg-white p-5 pt-[max(1rem,env(safe-area-inset-top))] shadow-sm flex justify-between items-center sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/home')} className="p-1 active:scale-95 transition-transform">
             <ArrowLeft className="w-6 h-6 text-gray-600" />

@@ -107,7 +107,7 @@ export default function InserisciRisultato() {
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-24">
-      <div className="bg-white p-5 shadow-sm flex items-center gap-3 sticky top-0 z-20">
+      <div className="bg-white p-5 pt-[max(1rem,env(safe-area-inset-top))] shadow-sm flex items-center gap-3 sticky top-0 z-20">
         <button onClick={() => navigate('/home')}><ArrowLeft /></button>
         <h1 className="font-bold">Pagelle e Risultato</h1>
       </div>

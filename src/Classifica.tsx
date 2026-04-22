@@ -30,7 +30,7 @@ export default function Classifica() {
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-10">
-      <div className="bg-white p-5 shadow-sm flex items-center gap-3 sticky top-0 z-30">
+      <div className="bg-white p-5 pt-[max(1rem,env(safe-area-inset-top))] shadow-sm flex items-center gap-3 sticky top-0 z-30">
         <button onClick={() => navigate('/home')}><ArrowLeft /></button>
         <h1 className="text-lg font-bold">Classifica Marcatori</h1>
       </div>

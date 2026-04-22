@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from './supabase';
-import { ArrowLeft, UserMinus, ShieldCheck, Users, AlertTriangle, ShieldOff, Layout, Save } from 'lucide-react';
+import { ArrowLeft, UserMinus, ShieldCheck, Users, AlertTriangle, ShieldOff, Layout, Save, Trash2 } from 'lucide-react';
 
 interface Membro {
   id: string;
@@ -168,11 +168,43 @@ export default function EditLega() {
     }
   };
 
+  const handleDeleteLega = async () => {
+  // 1. Prima barriera: Conferma nativa del browser
+  const confermato = window.confirm(
+    "ATTENZIONE: Sei sicuro di voler eliminare questa lega? \nQuesta azione è IRREVERSIBILE e cancellerà tutte le partite, i membri e le statistiche per tutti i giocatori."
+  );
+  
+  if (!confermato) return;
+
+  setLoading(true);
+
+  try {
+    // 2. Chiamata a Supabase per eliminare la lega
+    const { error } = await supabase
+      .from('lega')
+      .delete()
+      .eq('id', id); // 'id' è l'ID della lega preso dai parametri (useParams)
+
+    if (error) throw error;
+
+    alert("Lega eliminata con successo.");
+    
+    // 3. Reindirizza l'utente alla Home e forza un refresh 
+    // per pulire la sidebar e gli stati React
+    window.location.href = '/home'; 
+
+  } catch (error: any) {
+    alert("Errore durante l'eliminazione: " + error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
   if (loading) return <div className="p-10 text-center">Caricamento...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="bg-emerald-600 text-white p-4 flex items-center gap-4">
+      <header className="bg-emerald-600 text-white p-4 pt-[max(1rem,env(safe-area-inset-top))] flex items-center gap-4">
         <button onClick={() => navigate('/profilo')}><ArrowLeft /></button>
         <h1 className="text-xl font-bold">Impostazioni {nomeLega}</h1>
       </header>
@@ -277,6 +309,26 @@ export default function EditLega() {
           <p className="text-xs text-amber-800">
             <b>Attenzione:</b> L'espulsione di un utente è immediata. Se l'utente era un Manager, perderà i permessi di creazione partite e gestione risultati.
           </p>
+        </div>
+
+        {/* --- ZONA PERICOLOSA --- */}
+        <div className="mt-12 pt-6 border-t border-red-100">
+          <div className="mb-4">
+            <h3 className="text-sm font-black text-red-600 uppercase tracking-widest flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" /> Zona Pericolosa
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">
+              L'eliminazione della lega comporta la perdita definitiva di tutti i dati associati.
+            </p>
+          </div>
+          
+          <button 
+            onClick={handleDeleteLega}
+            className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold p-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 border border-red-200"
+          >
+            <Trash2 className="w-5 h-5" />
+            Elimina Lega Definitivamente
+          </button>
         </div>
       </main>
     </div>

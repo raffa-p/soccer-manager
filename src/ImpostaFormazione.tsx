@@ -161,7 +161,7 @@ const salvaFormazioni = async () => {
     <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-24 font-sans">
       
       {/* Header */}
-      <div className="bg-white p-5 shadow-sm flex justify-between items-center sticky top-0 z-10">
+      <div className="bg-white p-5 pt-[max(1rem,env(safe-area-inset-top))] shadow-sm flex justify-between items-center sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/home')} className="p-1">
             <ArrowLeft className="w-6 h-6 text-gray-600" />

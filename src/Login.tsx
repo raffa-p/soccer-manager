@@ -63,7 +63,7 @@ export default function Login() {
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-gray-50 flex flex-col justify-center p-6">
-      <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
+      <div className="bg-white p-8 pt-[max(1rem,env(safe-area-inset-top))] rounded-3xl shadow-lg border border-gray-100">
         {/* HEADER FORM */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">

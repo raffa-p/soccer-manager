@@ -349,7 +349,7 @@ export default function Home() {
       {isConfermatiModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
           <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-emerald-50">
+            <div className="p-5 pt-[max(1rem,env(safe-area-inset-top))] border-b border-gray-100 flex items-center justify-between bg-emerald-50">
               <h3 className="text-lg font-black text-emerald-900 flex items-center gap-2">
                 <Users className="w-5 h-5 text-emerald-600" />
                 Giocatori Confermati
@@ -359,7 +359,7 @@ export default function Home() {
               </button>
             </div>
             
-            <div className="p-2 overflow-y-auto flex-1">
+            <div className="p-2 pt-[max(1rem,env(safe-area-inset-top))] overflow-y-auto flex-1">
               {confermatiList.length === 0 ? (
                 <div className="text-center p-10 text-gray-400">
                   <p>Nessuno si è ancora segnato.</p>
@@ -398,7 +398,7 @@ export default function Home() {
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-emerald-600 text-white">
+        <div className="px-5 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))] border-b border-emerald-700 flex items-center justify-between bg-emerald-600 text-white">
           <div className="flex items-center gap-2">
             <TrophyIcon className="w-5 h-5" />
             <span className="font-bold text-lg">Le tue Leghe</span>
@@ -434,7 +434,7 @@ export default function Home() {
       </aside>
       
       {/* --- HEADER PRINCIPALE --- */}
-      <header className="flex justify-between items-center p-4 bg-white shadow-sm sticky top-0 z-10">
+      <header className="flex justify-between items-center p-4 pt-[max(1rem,env(safe-area-inset-top))] bg-white shadow-sm sticky top-0 z-10">
         <div className="flex items-center gap-3">
           {/* Tasto Menu (Hamburger) */}
           {hasLega && (

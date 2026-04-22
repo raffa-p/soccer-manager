@@ -4,3 +4,4 @@ capacitor.config.ts
 src/*.js
 dist/
 android/
+ios/

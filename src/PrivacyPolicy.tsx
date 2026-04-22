@@ -7,7 +7,7 @@ export default function PrivacyPolicy() {
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-white text-gray-800 font-sans pb-10">
-      <header className="p-4 border-b flex items-center gap-4 sticky top-0 bg-white z-10">
+      <header className="p-4 pt-[max(1rem,env(safe-area-inset-top))] border-b flex items-center gap-4 sticky top-0 bg-white z-10">
         <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full">
           <ArrowLeft className="w-6 h-6" />
         </button>

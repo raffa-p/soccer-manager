@@ -187,7 +187,7 @@ export default function Profilo() {
     <div className="max-w-md mx-auto min-h-screen bg-gray-50 font-sans pb-10">
       
       {/* Header */}
-      <div className="bg-white p-5 shadow-sm flex items-center gap-4 sticky top-0 z-20">
+      <div className="bg-white p-5 pt-[max(1rem,env(safe-area-inset-top))] shadow-sm flex items-center gap-4 sticky top-0 z-20">
         <button onClick={() => navigate("/home")} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
           <ArrowLeft className="w-6 h-6 text-gray-600" />
         </button>

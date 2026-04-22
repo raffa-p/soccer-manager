@@ -45,7 +45,7 @@ export default function Register() {
     <div className="max-w-md mx-auto min-h-screen bg-gray-50 flex flex-col justify-center px-5 font-sans py-10">
       {/* Intestazione */}
       <div className="flex flex-col items-center mb-8">
-        <div className="bg-emerald-500 p-4 rounded-full mb-4 shadow-lg shadow-emerald-200">
+        <div className="bg-emerald-500 p-4 pt-[max(1rem,env(safe-area-inset-top))] rounded-full mb-4 shadow-lg shadow-emerald-200">
           <UserPlus className="w-8 h-8 text-white" />
         </div>
         <h1 className="text-3xl font-black text-gray-900">Crea Account</h1>

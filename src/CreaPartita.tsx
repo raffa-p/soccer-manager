@@ -76,7 +76,7 @@ export default function CreaPartita() {
   return (
     <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-10">
       {/* Header */}
-      <div className="bg-white p-5 shadow-sm flex items-center gap-4 sticky top-0 z-10">
+      <div className="bg-white p-5 pt-[max(1rem,env(safe-area-inset-top))] shadow-sm flex items-center gap-4 sticky top-0 z-10">
         <button onClick={() => navigate('/home')} className="p-1">
           <ArrowLeft className="w-6 h-6 text-gray-600" />
         </button>

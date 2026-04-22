@@ -63,7 +63,7 @@ export default function ModificaPartita() {
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-gray-50">
-      <div className="bg-white p-5 shadow-sm flex items-center justify-between sticky top-0 z-20">
+      <div className="bg-white p-5 pt-[max(1rem,env(safe-area-inset-top))] shadow-sm flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/home')}><ArrowLeft /></button>
           <h1 className="font-bold">Modifica Partita</h1>
